@@ -96,7 +96,13 @@ const TryContinue = function TryContinue() {
         })
     }
     if (GAME.m_State instanceof CBootState) { // First screen
-        GAME.m_State.button.click();
+        isJoining = true;
+        setTimeout(() => {
+            if (typeof GAME.m_State.button != 'undefined') {
+                GAME.m_State.button.click();
+            }
+            isJoining = false;
+        }, 1000);        
     }
     if (GAME.m_State instanceof CPlanetSelectionState && !isJoining) { // Planet Selectiong
         GAME.m_State.m_rgPlanetSprites[0].click();
@@ -429,7 +435,7 @@ context.BOT_FUNCTION = function ticker(delta) {
         ReloadPage();
     }
 
-    if(GAME.m_IsStateLoading || !context.gPlayerInfo) {
+    if(GAME.m_IsStateLoading) {
         return;
     }
 
