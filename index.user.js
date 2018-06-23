@@ -115,21 +115,10 @@ const TryContinue = function TryContinue() {
         let bestZoneIdx = GetBestZone();
         if(bestZoneIdx) {
             console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
-            console.log("join to zone", bestZoneIdx);
+            console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
             isJoining = true;
-            SERVER.JoinZone(
-                bestZoneIdx,
-                (results) => {
-                    GAME.ChangeState(new CBattleState(GAME.m_State.m_PlanetData, bestZoneIdx));
-                    isJoining = false;
-                    console.log(results);
-                },
-                () => {
-                    console.log(`fail ${failCount}/${MAX_FAIL_COUNT}`);
-                    isJoining = false;
-                    failCount++;
-                }
-            );
+            GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
+            setTimeout(() => isJoining = false, 1000);
         }
         else {
             console.log("planet is clean, leaving");
