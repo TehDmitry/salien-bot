@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      18
+// @version      19
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -78,7 +78,7 @@ const TryContinue = function TryContinue() {
                 setTimeout(() => {
                     isJoining = false
                 }, 1000);
-                child.click();
+                child.pointertap();
             }
         })
     }
@@ -88,7 +88,7 @@ const TryContinue = function TryContinue() {
             if (child.visible && child.x == 155 && child.y == 300) {// TODO: not this
                 continued = true;
                 isJoining = true;
-                child.click();
+                child.pointertap();
                 setTimeout(() => {
                     isJoining = false
                 }, 1000);
@@ -105,7 +105,7 @@ const TryContinue = function TryContinue() {
         }, 1000);        
     }
     if (GAME.m_State instanceof CPlanetSelectionState && !isJoining) { // Planet Selectiong
-        GAME.m_State.m_rgPlanetSprites[0].click();
+        GAME.m_State.m_rgPlanetSprites[0].pointertap();
         isJoining = true;
         setTimeout(() => isJoining = false, 1000);
         continued = true;
@@ -299,7 +299,7 @@ class ClickAttack extends Attack {
             this.attack(target);
     }
     attack(enemy) {
-        enemy.m_Sprite.click();
+        enemy.m_Sprite.pointertap();
         this.nextAttackDelta = 1 / CLICKS_PER_SECOND;
     }
 }
