@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      21
+// @version      23
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -288,33 +288,9 @@ const EnemyCenter = function EnemyCenter(enemy) {
 const EnemyWillAffectedByBoulder = function EnemyWillAffectedByBoulder(enemy) {
     if(GAME.m_State.m_AttackManager.m_mapBoulders.size > 0) {
         let boulder = GAME.m_State.m_AttackManager.m_mapBoulders.values().next().value;
-        if(boulder.x < enemy.m_Sprite.x && boulder.y < enemy.m_Sprite.y + 100 && boulder.y > enemy.m_Sprite.y - 100) {
-            return true;
-        }
-    }
-    return false;
-}
-const DistBetweenPoints = function DistBetweenPoints(x1, y1, x2, y2) {
-    return Math.sqrt( Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2) );
-}
-const DistBetweenSpriteCenters = function DistBetweenSpriteCenters(sprite1, sprite2) {
-    return DistBetweenPoints(SpriteCenter(sprite1)[0], SpriteCenter(sprite1)[1], SpriteCenter(sprite2)[0], SpriteCenter(sprite2)[1]);
-}
-const EnemyIsAffectedByBlackhole = function EnemyIsAffectedByBlackhole(enemy) {
-    if(GAME.m_State.m_AttackManager.m_mapBlackholes.size > 0) {
-        let hole = GAME.m_State.m_AttackManager.m_mapBlackholes.values().next().value;
-        let dist = DistBetweenSpriteCenters(hole, enemy.m_Sprite);
-        if(dist > 200 && dist < 250) {
-            return true;
-        }
-    }
-    return false;
-}
-const EnemyWillAffectedByBlackhole = function EnemyWillAffectedByBlackhole(enemy) {
-    if(GAME.m_State.m_AttackManager.m_mapBlackholes.size > 0) {
-        let hole = GAME.m_State.m_AttackManager.m_mapBlackholes.values().next().value;
-        let dist = DistBetweenSpriteCenters(hole, enemy.m_Sprite);
-        if(dist > 250 && dist < 400) {
+        let x = EnemyCenter(enemy)[0];
+        let y = EnemyCenter(enemy)[1];
+        if(x > boulder.x && y > boulder.y - (boulder.height / 2) && y < boulder.y + (boulder.height / 2)) {
             return true;
         }
     }
@@ -322,22 +298,39 @@ const EnemyWillAffectedByBlackhole = function EnemyWillAffectedByBlackhole(enemy
 }
 const AllEnemiesHPNearPoint = function AllEnemiesHPNearPoint(x,  y, radius) {
     let hp = 0;
-    for(var [_, enemy] of EnemyManager().m_rgEnemies) {
+    EnemyManager().m_rgEnemies.forEach((enemy) => {
         if (enemy.m_Sprite.visible && !enemy.m_bDead) {
             if(DistBetweenPoints(x, y, enemy.m_Sprite.x, enemy.m_Sprite.y) <= radius) {
                 hp += enemy.m_nHealth;
             }
         }
-    }    
+    });
     return hp;
 }
+
+const BlackholeOfEnemy = function BlackholeOfEnemy(enemy) {
+    for(var [_, blackhole] of AttackManager().m_mapBlackholes) {
+        // Check if enemy is very close to blackhole
+        if ( EnemyCenter(enemy)[0] < blackhole.x || EnemyCenter(enemy)[0] > blackhole.x ||
+             EnemyCenter(enemy)[1] < blackhole.y || EnemyCenter(enemy)[1] > blackhole.y ) {
+            return blackhole;
+        }
+    }
+    return null;
+}
+const DistBetweenPoints = function DistBetweenPoints(x1, y1, x2, y2) {
+    return Math.sqrt( Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2) );
+}
+const DistBetweenSpriteCenters = function DistBetweenSpriteCenters(sprite1, sprite2) {
+    return DistBetweenPoints(SpriteCenter(sprite1)[0], SpriteCenter(sprite1)[1], SpriteCenter(sprite2)[0], SpriteCenter(sprite2)[1]);
+}
+
 const CenterOfSpawnZoneYpos = function CenterOfSpawnZoneX() {
     //slime from enemies.json has scale 0.5
     //texture has height 126
     let minSpriteHeight = 126 * 0.5;
     return (((APP.screen.height - minSpriteHeight) - (APP.screen.height - k_SpawnHeightLimit)) / 2) + (APP.screen.height - k_SpawnHeightLimit); //enemy.js:116
 }
-
 
 class Attack {
     constructor() {
@@ -402,6 +395,9 @@ class ClickAttack extends Attack {
 }
 
 class ProjectileAttack extends Attack {
+    targetPosition(target) {
+        return EnemyCenter(target);
+    }    
     shouldAttack(delta) {
         return CanAttack(this.getAttackName());
     }
@@ -429,27 +425,37 @@ class ProjectileAttack extends Attack {
         });
 
         if (target) {
-            let center = EnemyCenter(target);
+            let center = this.targetPosition(target);
             this.attack(center[0], center[1], target);
         } else {
             this.idle();
         }
     }
     attack(x, y, target) {
-        let xDiff = 0;
-        if(typeof target !== "undefined" && !EnemyIsAffectedByBlackhole(target)) {
-            xDiff = EnemySpeed(target) * 25;
-        }
-        SetMouse(x + xDiff, y)
+        SetMouse(x, y)
         AttackManager().m_mapKeyCodeToAttacks.get(this.getAttackData().keycode)()
     }
-
     idle() {
     }
 }
 
 // the '1' button (SlimeAttack PsychicAttack BeastAttack - depends on body type of your salien)
 class SpecialAttack extends ProjectileAttack {
+    targetPosition(target) {
+        var finalTargetPosition = EnemyCenter(target);
+
+        // SpecialAttack's projectile is quite slow, so we need to aim ahead of the target
+        finalTargetPosition[0] += 50*EnemySpeed(target);
+
+        // If target is stuck in blackhole, shoot at black hole instead
+        var blackhole = BlackholeOfEnemy(target);
+        if(blackhole != null) {
+            finalTargetPosition = [blackhole.x, blackhole.y];
+        }
+
+        return finalTargetPosition;
+    }    
+
     getAttackName() {
         if (gSalien.m_BodyType == "slime")
             return "slimeattack";
@@ -469,7 +475,7 @@ class SpecialAttack extends ProjectileAttack {
 
 class BombAttack extends ProjectileAttack {
     score(enemy) {
-        if (enemy.m_bDead || EnemyWillAffectedByBoulder(enemy) || EnemyWillAffectedByBlackhole(enemy))
+        if (enemy.m_bDead || EnemyWillAffectedByBoulder(enemy) || BlackholeOfEnemy(enemy) != null)
             return WORST_SCORE;
 
         let explosionWidth = GAME.m_State.m_AttackManager.m_rgExplosionFrames[0].width * 0.4; //attack.js:353 value is 204.8
@@ -575,8 +581,10 @@ context.BOT_FUNCTION = function ticker(delta) {
 
     let buttonsOnErrorMessage = document.getElementsByClassName("btn_grey_white_innerfade btn_medium");
     if(buttonsOnErrorMessage[0] != null) {
+        reloadingPage = true;
         if (!reloadingPage) {
             setTimeout(() => buttonsOnErrorMessage[0].click(), 1000);
+            setTimeout(() => reloadingPage = false, 2000);
         }
 
         return;
