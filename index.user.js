@@ -374,6 +374,8 @@ class ProjectileAttack extends Attack {
         if (target) {
             let center = EnemyCenter(target);
             this.attack(center[0], center[1], target);
+        } else {
+            this.idle();
         }
     }
     attack(x, y, target) {
@@ -383,6 +385,9 @@ class ProjectileAttack extends Attack {
         }
         SetMouse(x + xDiff, y)
         AttackManager().m_mapKeyCodeToAttacks.get(this.getAttackData().keycode)()
+    }
+
+    idle() {
     }
 }
 
@@ -395,6 +400,13 @@ class SpecialAttack extends ProjectileAttack {
             return "beastattack";
         else
             return "psychicattack";
+    }
+
+    idle() {
+        let y = WeakRandomInt( gApp.screen.height - k_SpawnHeightLimit, gApp.screen.height - 50);
+        let x = gApp.screen.width - 60;
+
+        this.attack(x, y);
     }
 }
 
