@@ -387,7 +387,11 @@ class ProjectileAttack extends Attack {
         }
     }
     attack(x, y, target) {
-        SetMouse(x, y)
+        let xDiff = 0;
+        if(typeof target !== "undefined" && !EnemyIsAffectedByBlackhole(target)) {
+            xDiff = EnemySpeed(target) * 25;
+        }
+        SetMouse(x + xDiff, y)
         AttackManager().m_mapKeyCodeToAttacks.get(this.getAttackData().keycode)()
     }
 }
@@ -402,14 +406,6 @@ class SpecialAttack extends ProjectileAttack {
         else
             return "psychicattack";
     }
-    attack(x, y, target) {
-        let xDiff = 0;
-        if(typeof target !== "undefined" && !EnemyIsAffectedByBlackhole(target)) {
-            xDiff = 100;
-        }
-        SetMouse(x-xDiff, y)
-        AttackManager().m_mapKeyCodeToAttacks.get(this.getAttackData().keycode)()
-    }    
 }
 
 class BombAttack extends ProjectileAttack {
