@@ -91,19 +91,23 @@ const TryContinue = function TryContinue() {
                 isJoining = true;
                 setTimeout(() => {
                     child.pointertap();
-                    isJoining = false;
                 }, 1000);
+
+                setTimeout(() => {
+                    isJoining = false;
+                }, 2000);                
             }
         })
     }
     if (GAME.m_State instanceof CBootState) { // First screen
+        continued = true;
         isJoining = true;
         setTimeout(() => {
             if (typeof GAME.m_State.button != 'undefined') {
                 GAME.m_State.button.click();
             }
             isJoining = false;
-        }, 1000);        
+        }, 1000);     
     }
     if (GAME.m_State instanceof CPlanetSelectionState && !isJoining) { // Planet Selectiong
         GAME.m_State.m_rgPlanetSprites[0].pointertap();
@@ -126,8 +130,9 @@ const TryContinue = function TryContinue() {
             isJoining = true;
             setTimeout(() => {
                 GAME.m_State.m_LeaveButton.click()
-                isJoining = false;
-            }, 1000);            
+            }, 1000);
+
+            setTimeout(() => isJoining = false, 2000);
             
         }
         return;
