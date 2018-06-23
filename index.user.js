@@ -64,8 +64,20 @@ const ReloadPage = function ReloadPage() {
     window.location.reload();
     console.log("try to reload page");
 }
+const ShowStats = function ShowStats() {
+    let scoreDiff = 0;
+    context.gPlayerInfo.score
+    if(prevScore > 0) {
+        scoreDiff = context.gPlayerInfo.score - prevScore;
+    }
+
+    console.log(`level ${context.gPlayerInfo.level} score ${context.gPlayerInfo.score} / ${context.gPlayerInfo.next_level_score} diff:${scoreDiff} xp`);
+
+    prevScore = context.gPlayerInfo.score;
+};
 let isJoining = false;
 let failCount = 0;
+let prevScore = 0;
 
 const TryContinue = function TryContinue() {
     let continued = false;
@@ -120,6 +132,7 @@ const TryContinue = function TryContinue() {
         if(bestZoneIdx) {
             console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
             console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
+            ShowStats();
             isJoining = true;
             GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
             setTimeout(() => isJoining = false, 1000);
