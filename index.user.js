@@ -56,7 +56,7 @@ const AttackManager = function AttackManager() {
     return GAME.m_State.m_AttackManager;
 }
 const ReloadPage = function ReloadPage() {
-    if(Date.now() - lastReloadAttempt < 5 * 60 * 1000) {
+    if(Date.now() - lastReloadAttempt < 30 * 1000) {
         return;
     }
     reloadingPage = true;
@@ -496,7 +496,7 @@ let watchdogTimer  = setInterval(function() {
     }
 }, 10000);
 let watchdogLastGameChange = Date.now();
-let lastReloadAttempt = Date.now();
+let lastReloadAttempt = 0;
 
 
 context.BOT_FUNCTION = function ticker(delta) {
