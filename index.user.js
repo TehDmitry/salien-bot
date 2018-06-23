@@ -24,6 +24,7 @@ if (typeof GM_info !== "undefined" && (GM_info.scriptHandler || "Greasemonkey") 
 
 // reload automatically instead of clicking ok
 context.error = context.GameLoadError = function() {
+    console.error("GameLoadError");
 	window.location.reload();
 }
 
