@@ -322,13 +322,13 @@ const EnemyWillAffectedByBlackhole = function EnemyWillAffectedByBlackhole(enemy
 }
 const AllEnemiesHPNearPoint = function AllEnemiesHPNearPoint(x,  y, radius) {
     let hp = 0;
-    EnemyManager().m_rgEnemies.forEach((enemy) => {
+    for(var [_, enemy] of EnemyManager().m_rgEnemies) {
         if (enemy.m_Sprite.visible && !enemy.m_bDead) {
             if(DistBetweenPoints(x, y, enemy.m_Sprite.x, enemy.m_Sprite.y) <= radius) {
                 hp += enemy.m_nHealth;
             }
         }
-    });
+    }    
     return hp;
 }
 const CenterOfSpawnZoneYpos = function CenterOfSpawnZoneX() {
