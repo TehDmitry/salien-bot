@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      20
+// @version      21
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -13,7 +13,7 @@
 // @grant        none
 // ==/UserScript==
 
-const MAX_LEVEL = 13;
+const MAX_LEVEL = 18;
 
 if (typeof GM_info !== "undefined" && (GM_info.scriptHandler || "Greasemonkey") == "Greasemonkey") {
     alert("It's not possible to support Greasemonkey, please try Tampermonkey or ViolentMonkey.");
@@ -78,6 +78,7 @@ const ShowStats = function ShowStats() {
 let isJoining = false;
 let failCount = 0;
 let prevScore = 0;
+let lastPlanetChange = 0;
 
 const TryContinue = function TryContinue() {
     let continued = false;
@@ -122,36 +123,55 @@ const TryContinue = function TryContinue() {
         }, 1000);     
     }
     if (GAME.m_State instanceof CPlanetSelectionState && !isJoining) { // Planet Selectiong
-        GAME.m_State.m_rgPlanetSprites[0].pointertap();
+        let bestPlanetId = GetBestPlanet();
+        let bestPlanetIdx;
+
+        for (let idx = 0; idx < GAME.m_State.m_rgPlanets.length; idx++) {
+            if(GAME.m_State.m_rgPlanets[idx].id == bestPlanetId) {
+                bestPlanetIdx = idx;
+            }
+        }
+
+        setTimeout(() => GAME.m_State.m_rgPlanetSprites[bestPlanetIdx].pointertap(), 1000);
+        setTimeout(() => isJoining = false, 2000);
         isJoining = true;
-        setTimeout(() => isJoining = false, 1000);
         continued = true;
     }
     if (GAME.m_State instanceof CBattleSelectionState && !isJoining) {
-        let bestZoneIdx = GetBestZone();
-        if(bestZoneIdx) {
-            console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
-            console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
-            ShowStats();
-            isJoining = true;
-            GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
-            setTimeout(() => isJoining = false, 1000);
+
+        if(lastPlanetChange < Date.now() - 60 * 60 * 1000) {
+            console.log("recheck planets");
+            lastPlanetChange = Date.now();
+            continued = GameLeavePlanet();
         }
         else {
-            console.log("planet is clean, leaving");
-            continued = true;
-            isJoining = true;
-            setTimeout(() => {
-                GAME.m_State.m_LeaveButton.click()
-            }, 1000);
-
-            setTimeout(() => isJoining = false, 2000);
-            
+            let bestZoneIdx = GetBestZone();
+            if(bestZoneIdx) {
+                console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
+                console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
+                ShowStats();
+                isJoining = true;
+                GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
+                setTimeout(() => isJoining = false, 1000);
+            }
+            else {
+                console.log("planet is clean, leaving");
+                continued = GameLeavePlanet();
+            }
         }
         return;
     }
     return continued;
 }
+const GameLeavePlanet = function GameLeavePlanet() {
+    isJoining = true;
+    setTimeout(() => {
+        GAME.m_State.m_LeaveButton.click();
+    }, 1000);
+    setTimeout(() => isJoining = false, 2000);
+
+    return true;
+};
 const CanAttack = function CanAttack(attackname) {
     let Manager = AttackManager().m_mapCooldowns.get(attackname);
     let lastUsed = Manager.m_rtAttackLastUsed;
@@ -202,20 +222,33 @@ const GetBestZone = function GetBestZone() {
     return bestZoneIdx;
 }
 const GetBestPlanet = function GetBestPlanet() {
-    let bestPlanet;
+    let maxProgressPlanet;
     let maxProgress = 0;
+
+    let minProgressPlanet;
+    let minProgress = 1;    
 
     if (!GAME.m_State.m_mapPlanets)
         return;
 
     for (let planetKV of GAME.m_State.m_mapPlanets) {
         let planet = planetKV[1];
-        if(planet.state.active && !planet.state.captured && planet.state.capture_progress > maxProgress) {
-            maxProgress = planet.state.capture_progress;
-            bestPlanet = planet;
+        if(planet.state.active && !planet.state.captured) {
+            if(planet.state.capture_progress > maxProgress) {
+                maxProgress = planet.state.capture_progress;
+                maxProgressPlanet = planet;
+            }
+
+            if(planet.state.capture_progress < minProgress) {
+                minProgress = planet.state.capture_progress;
+                minProgressPlanet = planet;
+            }
         }
 
     }
+
+    let isLevelling = context.gPlayerInfo.level < MAX_LEVEL || Option("forceLevellingMode");
+    let bestPlanet = isLevelling ? minProgressPlanet : maxProgressPlanet;
 
     if(bestPlanet) {
         console.log(`selecting planet ${bestPlanet.state.name} with progress: ${bestPlanet.state.capture_progress}`);
