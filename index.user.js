@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      23
+// @version      24
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -395,16 +395,34 @@ class ClickAttack extends Attack {
 }
 
 class ProjectileAttack extends Attack {
-    targetPosition(target) {
-        return EnemyCenter(target);
+    getProjectileFlyTime(target) {
+        return 0;
+    }
+    getProjectileSplashRadius(target) {
+        return 1;
     }    
+    targetPosition(target) {
+        var finalTargetPosition = EnemyCenter(target);
+
+        // SpecialAttack's projectile is quite slow, so we need to aim ahead of the target
+        finalTargetPosition[0] += this.getProjectileFlyTime(target)*EnemySpeed(target);
+
+        // If target is stuck in blackhole, shoot at black hole instead
+        var blackhole = BlackholeOfEnemy(target);
+        if(blackhole != null) {
+            finalTargetPosition = [blackhole.x, blackhole.y];
+        }
+
+        return finalTargetPosition;
+    } 
+
     shouldAttack(delta) {
         return CanAttack(this.getAttackName());
     }
     score(enemy) {
         if (enemy.m_bDead)
             return WORST_SCORE;
-        let score =  enemy.m_nHealth;
+        let score =  AllEnemiesHPNearPoint(enemy.m_Sprite.x, enemy.m_Sprite.y, this.getProjectileSplashRadius());
         
         if(EnemyWillAffectedByBoulder(enemy)) {
             score = score / 10;
@@ -441,20 +459,6 @@ class ProjectileAttack extends Attack {
 
 // the '1' button (SlimeAttack PsychicAttack BeastAttack - depends on body type of your salien)
 class SpecialAttack extends ProjectileAttack {
-    targetPosition(target) {
-        var finalTargetPosition = EnemyCenter(target);
-
-        // SpecialAttack's projectile is quite slow, so we need to aim ahead of the target
-        finalTargetPosition[0] += 50*EnemySpeed(target);
-
-        // If target is stuck in blackhole, shoot at black hole instead
-        var blackhole = BlackholeOfEnemy(target);
-        if(blackhole != null) {
-            finalTargetPosition = [blackhole.x, blackhole.y];
-        }
-
-        return finalTargetPosition;
-    }    
 
     getAttackName() {
         if (gSalien.m_BodyType == "slime")
@@ -465,10 +469,17 @@ class SpecialAttack extends ProjectileAttack {
             return "psychicattack";
     }
 
+    getProjectileFlyTime(target) {
+        return 50;
+    }
+    getProjectileSplashRadius() {
+        //gGame.m_State.m_AttackManager.m_mapBeasts.values().next().value.width
+        //attack.js:562
+        return 147/2;
+    }
     idle() {
         let y = WeakRandomInt( gApp.screen.height - k_SpawnHeightLimit, gApp.screen.height - 50);
         let x = gApp.screen.width - 60;
-
         this.attack(x, y);
     }
 }
@@ -478,8 +489,7 @@ class BombAttack extends ProjectileAttack {
         if (enemy.m_bDead || EnemyWillAffectedByBoulder(enemy) || BlackholeOfEnemy(enemy) != null)
             return WORST_SCORE;
 
-        let explosionWidth = GAME.m_State.m_AttackManager.m_rgExplosionFrames[0].width * 0.4; //attack.js:353 value is 204.8
-        let score =  AllEnemiesHPNearPoint(enemy.m_Sprite.x, enemy.m_Sprite.y, explosionWidth/2);
+        let score =  AllEnemiesHPNearPoint(enemy.m_Sprite.x, enemy.m_Sprite.y, this.getProjectileSplashRadius());
         if(score < 30) {
             score = WORST_SCORE;
         }
@@ -489,6 +499,13 @@ class BombAttack extends ProjectileAttack {
     getAttackName() {
         return "explosion";
     }
+    getProjectileSplashRadius() {
+        let explosionWidth = GAME.m_State.m_AttackManager.m_rgExplosionFrames[0].width * 0.4; //attack.js:353 value is 204.8
+        return explosionWidth/2;
+    }
+    getProjectileFlyTime(target) {
+        return 25;
+    }    
 }
 class BlackholeAttack extends ProjectileAttack {
     getAttackName() {
