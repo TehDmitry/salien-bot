@@ -20,12 +20,22 @@ if (typeof GM_info !== "undefined" && (GM_info.scriptHandler || "Greasemonkey") 
 }
 
 (function(context) {
-"use strict";
+    "use strict";
+
 
 // reload automatically instead of clicking ok
 context.error = context.GameLoadError = function() {
     console.error("GameLoadError");
-	window.location.reload();
+    window.location.reload();
+}
+
+if(typeof context.gApp == "undefined") {
+    //An error occurred while processing your request.
+    console.log("An error occurred");
+    setTimeout(() => {
+        GameLoadError();
+    }, 2000);      
+    return;
 }
 
 // when the error is fixed we should remove the following
