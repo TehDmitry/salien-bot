@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      29
+// @version      30
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -232,7 +232,7 @@ const TryContinue = function TryContinue() {
         CleanJoiningAfter(8000);
         return;
     }
-    if (GAME.m_State instanceof CBossState && GAME.m_State.m_IntroScreen.continueButton.visible) { // Boss
+    if (GAME.m_State instanceof CBossState && GAME.m_State.m_IntroScreen.visible) { // Boss start
         SetJoining(true);
         continued = true;
         setTimeout(() => {
@@ -240,7 +240,18 @@ const TryContinue = function TryContinue() {
         }, 1000);     
 
         CleanJoiningAfter(2000);  
-    }    
+    }  
+    if (GAME.m_State instanceof CBossState && typeof gGame.m_State.m_VictoryScreen !== 'undefined' && gGame.m_State.m_VictoryScreen.visible) { // Boss end && !GAME.m_State.m_bRunning
+        SetJoining(true);
+        continued = true;
+        setTimeout(() => {
+            //GAME.m_State.m_VictoryScreen.continueButton.pointertap();
+            GAME.m_State.m_VictoryScreen.children[1].pointertap();
+        }, 1000);     
+
+        CleanJoiningAfter(2000);  
+    }  
+
     return continued;
 }
 const GameLeavePlanet = function GameLeavePlanet() {
