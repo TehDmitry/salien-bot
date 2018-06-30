@@ -149,13 +149,13 @@ const TryContinue = function TryContinue() {
     }
     if (GAME.m_State instanceof CBattleSelectionState && !isJoining) {
 
-        if(lastPlanetChange < Date.now() - 60 * 60 * 1000) {
+        if(lastPlanetChange < Date.now() - 60 * 60 * 1000 && GetBossZone()<0) {
             console.log("recheck planets");
             lastPlanetChange = Date.now();
             continued = GameLeavePlanet();
         }
         else {
-            let bestZoneIdx = GetBestZone();
+            let bestZoneIdx = GetBossZone() > -1 ?GetBossZone():GetBestZone();
             if(bestZoneIdx > -1) {
                 console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
                 console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
@@ -171,6 +171,17 @@ const TryContinue = function TryContinue() {
         }
         return;
     }
+    if (GAME.m_State instanceof CBossState && GAME.m_State.m_IntroScreen.continueButton.visible) { // Boss
+        continued = true;
+        isJoining = true;
+        setTimeout(() => {
+            GAME.m_State.m_IntroScreen.continueButton.pointertap();
+        }, 1000);     
+
+        setTimeout(() => {
+            isJoining = false;
+        }, 2000);         
+    }    
     return continued;
 }
 const GameLeavePlanet = function GameLeavePlanet() {
@@ -192,6 +203,16 @@ const CanAttack = function CanAttack(attackname) {
     Manager.m_rtAttackLastUsed = lastUsed;
     return canAttack;
 }
+const GetBossZone = function GetBossZone() {
+    for (let idx = 0; idx < GAME.m_State.m_Grid.m_Tiles.length; idx++) {
+        let zone = GAME.m_State.m_Grid.m_Tiles[idx].Info;
+        if (!zone.captured && zone.boss) {
+            return idx;
+        }
+    }
+
+    return -1;
+};
 const GetBestZone = function GetBestZone() {
     let bestZoneIdx;
     let highestDifficulty = -1;
