@@ -198,7 +198,7 @@ const GetBestZone = function GetBestZone() {
 
     for (let idx = 0; idx < GAME.m_State.m_Grid.m_Tiles.length; idx++) {
         let zone = GAME.m_State.m_Grid.m_Tiles[idx].Info;
-        if (!zone.captured) {
+        if (!zone.captured && zone.clans.length > 0) {
             if (zone.boss) {
                 console.log(`zone ${idx} (${bestZoneIdx % k_NumMapTilesW}, ${(bestZoneIdx / k_NumMapTilesW) | 0}) with boss`);
                 return idx;
