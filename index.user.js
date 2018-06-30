@@ -316,7 +316,7 @@ const GetOutdatedPlanet = function GetOutdatedPlanet() {
     for (let planetKV of GAME.m_State.m_mapPlanets) {
         let planet = planetKV[1];
         if(planet.state.active && !planet.state.captured) {
-            
+
             let lastPlanetCheck = sessionStorage.getItem('lastPlanetCheck_' + planet.id);
 
             if(mostOutdatedDate == 0 || lastPlanetCheck < mostOutdatedDate) {
@@ -423,7 +423,7 @@ const BlackholeOfEnemy = function BlackholeOfEnemy(enemy) {
     for(var [_, blackhole] of AttackManager().m_mapBlackholes) {
         // Check if enemy is very close to blackhole
         if ( EnemyCenter(enemy)[0] < blackhole.x || EnemyCenter(enemy)[0] > blackhole.x ||
-           EnemyCenter(enemy)[1] < blackhole.y || EnemyCenter(enemy)[1] > blackhole.y ) {
+         EnemyCenter(enemy)[1] < blackhole.y || EnemyCenter(enemy)[1] > blackhole.y ) {
             return blackhole;
     }
 }
@@ -721,53 +721,53 @@ context.BOT_FUNCTION = function ticker(delta) {
     delta /= 100;
 
     let difficulties = PIXI.loader.resources['level_config'];
-    if (difficulties)
+    if (difficulties) {
         for (let difficulty in difficulties.data) {
             let freq = difficulties.data[difficulty].enemies.spawn_frequency;
             freq.min = freq.max;
         }
+    }
 
-        let buttonsOnErrorMessage = document.getElementsByClassName("btn_grey_white_innerfade btn_medium");
-        if(buttonsOnErrorMessage[0] != null) {
-            console.log("found error button", buttonsOnErrorMessage[0]);
-            reloadingPage = true;
-            if (!reloadingPage) {
-                setTimeout(() => buttonsOnErrorMessage[0].click(), 1000);
-                setTimeout(() => reloadingPage = false, 2000);
-            }
-
-            return;
+    let buttonsOnErrorMessage = document.getElementsByClassName("btn_grey_white_innerfade btn_medium");
+    if(buttonsOnErrorMessage[0] != null) {
+        console.log("found error button");
+        reloadingPage = true;
+        if (!reloadingPage) {
+            setTimeout(() => GameLoadError(), 1000);
+            setTimeout(() => reloadingPage = false, 2000);
         }
 
-        if(failCount > MAX_FAIL_COUNT) {
-            ReloadPage();
+        return;
+    }
+
+    if(failCount > MAX_FAIL_COUNT) {
+        ReloadPage();
+    }
+
+    if(GAME.m_IsStateLoading) {
+        return;
+    }
+
+    if (!InGame()) {
+        if (TryContinue()) {
+            console.log("continued!");
+            watchdogLastGameChange = Date.now();
         }
-
-        if(GAME.m_IsStateLoading) {
-            return;
-        }
-
-        if (!InGame()) {
-            if (TryContinue()) {
-                console.log("continued!");
-                watchdogLastGameChange = Date.now();
-            }
-            return;
-        }
-        failCount = 0;
+        return;
+    }
+    failCount = 0;
 
 
-        let state = EnemyManager();
+    let state = EnemyManager();
+    let enemies = state.m_mapEnemies;
 
-        let enemies = state.m_mapEnemies;
-
-        for (let attack of attacks)
-            if (attack.shouldAttack(delta, enemies))
-                attack.process(enemies);
-
-        }
+    for (let attack of attacks) {
+        if (attack.shouldAttack(delta, enemies))
+            attack.process(enemies);
+    }
+}
 
 
-        APP.ticker.add(context.BOT_FUNCTION);
+APP.ticker.add(context.BOT_FUNCTION);
 
-    })(window);
+})(window);
