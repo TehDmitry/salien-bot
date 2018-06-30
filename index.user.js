@@ -399,6 +399,7 @@ const GetBestPlanet = function GetBestPlanet() {
 // Let's challenge ourselves to be human here!
 const CLICKS_PER_SECOND = 15;
 const STATE_TIMEOUT_MINUTES = 5;
+const BOSS_TIMEOUT_MINUTES = 25;
 const MAX_FAIL_COUNT = 50;
 
 const InGame = function InGame() {
@@ -740,11 +741,13 @@ if (context.BOT_FUNCTION) {
 
 let reloadingPage = false;
 let watchdogTimer  = setInterval(function() {
+    
+    let timeoutMs = STATE_TIMEOUT_MINUTES * 60 * 1000;
     if(GAME.m_State instanceof CBossState) {
-        return;
+        timeoutMs = BOSS_TIMEOUT_MINUTES * 60 * 1000;
     }
 
-    if(Date.now() - watchdogLastGameChange > STATE_TIMEOUT_MINUTES * 60 * 1000) {
+    if(Date.now() - watchdogLastGameChange > timeoutMs) {
         ReloadPage();
     }
 }, 10000);
