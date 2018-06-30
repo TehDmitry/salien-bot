@@ -163,6 +163,11 @@ const TryContinue = function TryContinue() {
         let bestPlanetId;
         if(FORCE_FIND_THE_BOSS) {
             bestPlanetId = GetOutdatedPlanet();
+            if(bestPlanetId == 0) {
+                sessionStorage.setItem('lastPlanetFullCheck', Date.now());
+                console.log('planets checked');
+                bestPlanetId = GetBestPlanet();
+            }
         }
         else {
             bestPlanetId = GetBestPlanet();
@@ -184,22 +189,23 @@ const TryContinue = function TryContinue() {
             }, 2000);
             continued = true;
         }
-        CleanJoiningAfter(10000);
+        CleanJoiningAfter(6000);
     }
     if (GAME.m_State instanceof CBattleSelectionState && !isJoining) {
         SetJoining(true);
         sessionStorage.setItem('lastPlanetCheck_' + GAME.m_State.m_PlanetData.id, Date.now());
 
+        let secondsFromFullCheck = sessionStorage.getItem('lastPlanetFullCheck')?(Date.now() - sessionStorage.getItem('lastPlanetFullCheck'))/1000:0;
+
         if(lastPlanetChange < Date.now() - 60 * 60 * 1000 && GetBossZone()<0) {
             console.log("recheck planets");
             lastPlanetChange = Date.now();
-
-            setTimeout(() => GameLeavePlanet(), 10000);
+            setTimeout(() => GameLeavePlanet(), 2000);
             continued = true;
         }
         else {
             let bestZoneIdx;
-            if(FORCE_FIND_THE_BOSS) {
+            if(FORCE_FIND_THE_BOSS && secondsFromFullCheck > 180) {
                 bestZoneIdx = GetBossZone();
             }
             else {
@@ -213,17 +219,17 @@ const TryContinue = function TryContinue() {
                 ShowStats();
                 setTimeout(() => {
                     GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
-                }, 5000);
+                }, 2000);
             }
             else {
-                console.log("planet is clean, leaving", this);
+                console.log("planet is clean, leaving");
 
-                setTimeout(() => GameLeavePlanet(), 10000);
+                setTimeout(() => GameLeavePlanet(), 2000);
                 continued = true;
             }
         }
 
-        CleanJoiningAfter(12000);
+        CleanJoiningAfter(8000);
         return;
     }
     if (GAME.m_State instanceof CBossState && GAME.m_State.m_IntroScreen.continueButton.visible) { // Boss
@@ -327,7 +333,7 @@ const GetOutdatedPlanet = function GetOutdatedPlanet() {
     }
 
     if(mostOutdatedPlanet) {
-        let planetCheckTimeout = 60;
+        let planetCheckTimeout = 120;
         let lastPlanetCheck = sessionStorage.getItem('lastPlanetCheck_' + mostOutdatedPlanet.id);
 
         let secondsSinceCheck = (lastPlanetCheck == null)?planetCheckTimeout + 1:Math.round((Date.now() - lastPlanetCheck)/1000);
@@ -339,8 +345,9 @@ const GetOutdatedPlanet = function GetOutdatedPlanet() {
         else {
             console.log(`Outdated planet «${mostOutdatedPlanet.state.name}» will be recheck in ${planetCheckTimeout - secondsSinceCheck}`);
         }
-
     }
+
+    return 0;
 }
 
 const GetBestPlanet = function GetBestPlanet() {
