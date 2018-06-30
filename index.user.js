@@ -87,9 +87,34 @@ const ShowStats = function ShowStats() {
     prevScore = context.gPlayerInfo.score;
 };
 let isJoining = false;
+let isJoiningCleared = true;
 let failCount = 0;
 let prevScore = 0;
 let lastPlanetChange = 0;
+
+const SetJoining = function SetJoining(joining) {
+    if(isJoining === joining) {
+        throw new Error("already joining");
+    }
+    isJoining = joining;
+}
+
+const CleanJoiningAfter = function CleanJoiningAfter(ms) {
+    if(isJoiningCleared !== true) {
+        throw new Error("double joining");
+    }
+
+    if(isJoining == false) {
+        throw new Error("not joining");
+    }
+
+    isJoiningCleared = false;
+
+    setTimeout(() => {
+        SetJoining(false);
+        isJoiningCleared = true;
+    }, ms);
+}
 
 const TryContinue = function TryContinue() {
     let continued = false;
@@ -99,11 +124,12 @@ const TryContinue = function TryContinue() {
         GAME.m_State.m_VictoryScreen.children.forEach(function(child) {
             if (child.visible && child.x == 155 && child.y == 300) {// TODO: not this
                 continued = true;
-                isJoining = true;
+                SetJoining(true);
                 setTimeout(() => {
                     child.pointertap();
-                    isJoining = false;
                 }, 1000);
+
+                CleanJoiningAfter(1000);
             }
         })
     }
@@ -112,28 +138,28 @@ const TryContinue = function TryContinue() {
         GAME.m_State.m_LevelUpScreen.children.forEach(function(child) {
             if (child.visible && child.x == 155 && child.y == 300) {// TODO: not this
                 continued = true;
-                isJoining = true;
+                SetJoining(true);
                 setTimeout(() => {
                     child.pointertap();
                 }, 1000);
 
-                setTimeout(() => {
-                    isJoining = false;
-                }, 2000);                
+                CleanJoiningAfter(2000);            
             }
         })
     }
     if (GAME.m_State instanceof CBootState) { // First screen
         continued = true;
-        isJoining = true;
+        SetJoining(true);
         setTimeout(() => {
             if (typeof GAME.m_State.button != 'undefined') {
                 GAME.m_State.button.click();
             }
-            isJoining = false;
         }, 1000);     
+
+        CleanJoiningAfter(2000);
     }
     if (GAME.m_State instanceof CPlanetSelectionState && !isJoining) { // Planet Selectiong
+        SetJoining(true);
         let bestPlanetId;
         if(FORCE_FIND_THE_BOSS) {
             bestPlanetId = GetOutdatedPlanet();
@@ -142,27 +168,34 @@ const TryContinue = function TryContinue() {
             bestPlanetId = GetBestPlanet();
         }
 
-        let bestPlanetIdx;
+        if(bestPlanetId) {
+            let bestPlanetIdx;
 
-        for (let idx = 0; idx < GAME.m_State.m_rgPlanets.length; idx++) {
-            if(GAME.m_State.m_rgPlanets[idx].id == bestPlanetId) {
-                bestPlanetIdx = idx;
+            for (let idx = 0; idx < GAME.m_State.m_rgPlanets.length; idx++) {
+                if(GAME.m_State.m_rgPlanets[idx].id == bestPlanetId) {
+                    bestPlanetIdx = idx;
+                }
             }
-        }
 
-        setTimeout(() => GAME.m_State.m_rgPlanetSprites[bestPlanetIdx].pointertap(), 1000);
-        setTimeout(() => isJoining = false, 2000);
-        isJoining = true;
-        continued = true;
+            setTimeout(() => {
+                if(typeof gGame.m_State.m_rgPlanetSprites !== 'undefined') {
+                    GAME.m_State.m_rgPlanetSprites[bestPlanetIdx].pointertap();
+                }
+            }, 2000);
+            continued = true;
+        }
+        CleanJoiningAfter(10000);
     }
     if (GAME.m_State instanceof CBattleSelectionState && !isJoining) {
-
+        SetJoining(true);
         sessionStorage.setItem('lastPlanetCheck_' + GAME.m_State.m_PlanetData.id, Date.now());
 
         if(lastPlanetChange < Date.now() - 60 * 60 * 1000 && GetBossZone()<0) {
             console.log("recheck planets");
             lastPlanetChange = Date.now();
-            continued = GameLeavePlanet();
+
+            setTimeout(() => GameLeavePlanet(), 10000);
+            continued = true;
         }
         else {
             let bestZoneIdx;
@@ -172,42 +205,46 @@ const TryContinue = function TryContinue() {
             else {
                 bestZoneIdx = GetBossZone() > -1 ?GetBossZone():GetBestZone();
             }
+            
 
             if(bestZoneIdx > -1) {
                 console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
                 console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
                 ShowStats();
-                isJoining = true;
-                GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
-                setTimeout(() => isJoining = false, 1000);
+                setTimeout(() => {
+                    GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
+                }, 5000);
             }
             else {
-                console.log("planet is clean, leaving");
-                continued = GameLeavePlanet();
+                console.log("planet is clean, leaving", this);
+
+                setTimeout(() => GameLeavePlanet(), 10000);
+                continued = true;
             }
         }
+
+        CleanJoiningAfter(12000);
         return;
     }
     if (GAME.m_State instanceof CBossState && GAME.m_State.m_IntroScreen.continueButton.visible) { // Boss
+        SetJoining(true);
         continued = true;
-        isJoining = true;
         setTimeout(() => {
             GAME.m_State.m_IntroScreen.continueButton.pointertap();
         }, 1000);     
 
-        setTimeout(() => {
-            isJoining = false;
-        }, 2000);         
+        CleanJoiningAfter(2000);  
     }    
     return continued;
 }
 const GameLeavePlanet = function GameLeavePlanet() {
-    isJoining = true;
+    if(isJoining == false) {
+        throw new Error("not joining");
+    }
+
     setTimeout(() => {
         GAME.m_State.m_LeaveButton.click();
     }, 1000);
-    setTimeout(() => isJoining = false, 2000);
-
     return true;
 };
 const CanAttack = function CanAttack(attackname) {
