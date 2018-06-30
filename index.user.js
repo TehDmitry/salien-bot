@@ -659,7 +659,13 @@ class MeteorAttack extends ProjectileAttack {
         this.attack();
     }
     attack() {
-        SetMouse(k_nDamagePointx + 50,  CenterOfSpawnZoneYpos());
+        let yPos = CenterOfSpawnZoneYpos();
+        if(typeof gGame.m_State.m_EnemyManager.m_Boss !== 'undefined') {
+            let boss = gGame.m_State.m_EnemyManager.m_Boss;
+            yPos = boss.m_Sprite.y + (boss.m_Sprite.height * boss.m_Sprite.scale.x) / 2
+            console.log(CenterOfSpawnZoneYpos(), boss.m_Sprite.y, (boss.m_Sprite.height * boss.m_Sprite.scale.x) / 2);
+        }
+        SetMouse(k_nDamagePointx + 50, yPos);
         AttackManager().m_mapKeyCodeToAttacks.get(this.getAttackData().keycode)();
     }    
 }
