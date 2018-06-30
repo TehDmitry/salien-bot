@@ -184,6 +184,9 @@ const GameLeavePlanet = function GameLeavePlanet() {
 };
 const CanAttack = function CanAttack(attackname) {
     let Manager = AttackManager().m_mapCooldowns.get(attackname);
+    if(typeof Manager == 'undefined') {
+        return false;
+    }
     let lastUsed = Manager.m_rtAttackLastUsed;
     let canAttack = Manager.BAttack();
     Manager.m_rtAttackLastUsed = lastUsed;
@@ -575,13 +578,26 @@ class FreezeAttack extends Attack {
     }
 }
 
+class HealingAttack extends ProjectileAttack {
+    getAttackName() {
+        return "healing";
+    }
+    process(enemies) {
+        this.attack();
+    }
+    attack() {
+        AttackManager().m_mapKeyCodeToAttacks.get(this.getAttackData().keycode)();
+    }    
+}
+
 let attacks = [
 new ClickAttack(),
 new SpecialAttack(),
 new FreezeAttack(),
 new BombAttack(),
 new MeteorAttack(),
-new BlackholeAttack()
+new BlackholeAttack(),
+new HealingAttack()
 ]
 
 if (context.BOT_FUNCTION) {
