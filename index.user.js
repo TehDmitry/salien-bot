@@ -434,7 +434,7 @@ const BlackholeOfEnemy = function BlackholeOfEnemy(enemy) {
     for(var [_, blackhole] of AttackManager().m_mapBlackholes) {
         // Check if enemy is very close to blackhole
         if ( EnemyCenter(enemy)[0] < blackhole.x || EnemyCenter(enemy)[0] > blackhole.x ||
-         EnemyCenter(enemy)[1] < blackhole.y || EnemyCenter(enemy)[1] > blackhole.y ) {
+           EnemyCenter(enemy)[1] < blackhole.y || EnemyCenter(enemy)[1] > blackhole.y ) {
             return blackhole;
     }
 }
