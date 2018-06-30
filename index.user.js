@@ -705,6 +705,10 @@ if (context.BOT_FUNCTION) {
 
 let reloadingPage = false;
 let watchdogTimer  = setInterval(function() {
+    if(GAME.m_State instanceof CBossState) {
+        return;
+    }
+
     if(Date.now() - watchdogLastGameChange > STATE_TIMEOUT_MINUTES * 60 * 1000) {
         ReloadPage();
     }
