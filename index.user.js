@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      27
+// @version      28
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -14,6 +14,7 @@
 // ==/UserScript==
 
 const MAX_LEVEL = 18;
+const FORCE_FIND_THE_BOSS = true;
 
 if (typeof GM_info !== "undefined" && (GM_info.scriptHandler || "Greasemonkey") == "Greasemonkey") {
     alert("It's not possible to support Greasemonkey, please try Tampermonkey or ViolentMonkey.");
@@ -133,7 +134,14 @@ const TryContinue = function TryContinue() {
         }, 1000);     
     }
     if (GAME.m_State instanceof CPlanetSelectionState && !isJoining) { // Planet Selectiong
-        let bestPlanetId = GetBestPlanet();
+        let bestPlanetId;
+        if(FORCE_FIND_THE_BOSS) {
+            bestPlanetId = GetOutdatedPlanet();
+        }
+        else {
+            bestPlanetId = GetBestPlanet();
+        }
+
         let bestPlanetIdx;
 
         for (let idx = 0; idx < GAME.m_State.m_rgPlanets.length; idx++) {
@@ -149,13 +157,22 @@ const TryContinue = function TryContinue() {
     }
     if (GAME.m_State instanceof CBattleSelectionState && !isJoining) {
 
+        sessionStorage.setItem('lastPlanetCheck_' + GAME.m_State.m_PlanetData.id, Date.now());
+
         if(lastPlanetChange < Date.now() - 60 * 60 * 1000 && GetBossZone()<0) {
             console.log("recheck planets");
             lastPlanetChange = Date.now();
             continued = GameLeavePlanet();
         }
         else {
-            let bestZoneIdx = GetBossZone() > -1 ?GetBossZone():GetBestZone();
+            let bestZoneIdx;
+            if(FORCE_FIND_THE_BOSS) {
+                bestZoneIdx = GetBossZone();
+            }
+            else {
+                bestZoneIdx = GetBossZone() > -1 ?GetBossZone():GetBestZone();
+            }
+
             if(bestZoneIdx > -1) {
                 console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
                 console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
@@ -251,6 +268,33 @@ const GetBestZone = function GetBestZone() {
 
     return bestZoneIdx;
 }
+const GetOutdatedPlanet = function GetOutdatedPlanet() {
+    let mostOutdatedPlanet;
+    let mostOutdatedDate = 0;
+
+
+    if (!GAME.m_State.m_mapPlanets)
+        return;
+
+    for (let planetKV of GAME.m_State.m_mapPlanets) {
+        let planet = planetKV[1];
+        if(planet.state.active && !planet.state.captured) {
+            
+            let lastPlanetCheck = sessionStorage.getItem('lastPlanetCheck_' + planet.id);
+
+            if(mostOutdatedDate == 0 || lastPlanetCheck < mostOutdatedDate) {
+                mostOutdatedPlanet = planet;
+                mostOutdatedDate = lastPlanetCheck;
+            }
+        }
+    }
+
+    if(mostOutdatedPlanet) {
+        console.log(`selecting Outdated planet ${mostOutdatedPlanet.state.name} with progress: ${mostOutdatedPlanet.state.capture_progress}`);
+        return mostOutdatedPlanet.id;
+    }
+}
+
 const GetBestPlanet = function GetBestPlanet() {
     let maxProgressPlanet;
     let maxProgress = 0;
@@ -648,6 +692,7 @@ context.BOT_FUNCTION = function ticker(delta) {
 
         let buttonsOnErrorMessage = document.getElementsByClassName("btn_grey_white_innerfade btn_medium");
         if(buttonsOnErrorMessage[0] != null) {
+            console.log("found error button", buttonsOnErrorMessage[0]);
             reloadingPage = true;
             if (!reloadingPage) {
                 setTimeout(() => buttonsOnErrorMessage[0].click(), 1000);
