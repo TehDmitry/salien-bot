@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      24
+// @version      25
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -156,7 +156,7 @@ const TryContinue = function TryContinue() {
         }
         else {
             let bestZoneIdx = GetBestZone();
-            if(bestZoneIdx) {
+            if(bestZoneIdx > -1) {
                 console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
                 console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
                 ShowStats();
@@ -288,8 +288,8 @@ const EnemyDistance = function EnemyDistance(enemy) {
 
 const SpriteCenter = function SpriteCenter(sprite) {
     return [
-        sprite.x + sprite.width / 2,
-        sprite.y + sprite.height / 2
+    sprite.x + sprite.width / 2,
+    sprite.y + sprite.height / 2
     ];
 }
 const EnemyCenter = function EnemyCenter(enemy) {
@@ -308,7 +308,7 @@ const EnemyWillAffectedByBoulder = function EnemyWillAffectedByBoulder(enemy) {
 }
 const AllEnemiesHPNearPoint = function AllEnemiesHPNearPoint(x,  y, radius) {
     let hp = 0;
-    EnemyManager().m_rgEnemies.forEach((enemy) => {
+    EnemyManager().m_mapEnemies.forEach((enemy) => {
         if (enemy.m_Sprite.visible && !enemy.m_bDead) {
             if(DistBetweenPoints(x, y, enemy.m_Sprite.x, enemy.m_Sprite.y) <= radius) {
                 hp += enemy.m_nHealth;
@@ -322,11 +322,11 @@ const BlackholeOfEnemy = function BlackholeOfEnemy(enemy) {
     for(var [_, blackhole] of AttackManager().m_mapBlackholes) {
         // Check if enemy is very close to blackhole
         if ( EnemyCenter(enemy)[0] < blackhole.x || EnemyCenter(enemy)[0] > blackhole.x ||
-             EnemyCenter(enemy)[1] < blackhole.y || EnemyCenter(enemy)[1] > blackhole.y ) {
+           EnemyCenter(enemy)[1] < blackhole.y || EnemyCenter(enemy)[1] > blackhole.y ) {
             return blackhole;
-        }
     }
-    return null;
+}
+return null;
 }
 const DistBetweenPoints = function DistBetweenPoints(x1, y1, x2, y2) {
     return Math.sqrt( Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2) );
@@ -385,6 +385,9 @@ class ClickAttack extends Attack {
     }
     process(enemies) {
         let target, target_score = WORST_SCORE;
+        if(typeof enemies == 'undefined') {
+            return;
+        }
 
         enemies.forEach((enemy) => {
             if (!enemy.m_Sprite.visible)
@@ -443,6 +446,10 @@ class ProjectileAttack extends Attack {
     process(enemies) {
         let target, target_score = WORST_SCORE;
 
+        if(typeof enemies == 'undefined' ) {
+            return;
+        }
+        
         enemies.forEach((enemy) => {
             if (!enemy.m_Sprite.visible)
                 return;
@@ -569,12 +576,12 @@ class FreezeAttack extends Attack {
 }
 
 let attacks = [
-    new ClickAttack(),
-    new SpecialAttack(),
-    new FreezeAttack(),
-    new BombAttack(),
-    new MeteorAttack(),
-    new BlackholeAttack()
+new ClickAttack(),
+new SpecialAttack(),
+new FreezeAttack(),
+new BombAttack(),
+new MeteorAttack(),
+new BlackholeAttack()
 ]
 
 if (context.BOT_FUNCTION) {
@@ -606,46 +613,46 @@ context.BOT_FUNCTION = function ticker(delta) {
             freq.min = freq.max;
         }
 
-    let buttonsOnErrorMessage = document.getElementsByClassName("btn_grey_white_innerfade btn_medium");
-    if(buttonsOnErrorMessage[0] != null) {
-        reloadingPage = true;
-        if (!reloadingPage) {
-            setTimeout(() => buttonsOnErrorMessage[0].click(), 1000);
-            setTimeout(() => reloadingPage = false, 2000);
+        let buttonsOnErrorMessage = document.getElementsByClassName("btn_grey_white_innerfade btn_medium");
+        if(buttonsOnErrorMessage[0] != null) {
+            reloadingPage = true;
+            if (!reloadingPage) {
+                setTimeout(() => buttonsOnErrorMessage[0].click(), 1000);
+                setTimeout(() => reloadingPage = false, 2000);
+            }
+
+            return;
         }
 
-        return;
-    }
-
-    if(failCount > MAX_FAIL_COUNT) {
-        ReloadPage();
-    }
-
-    if(GAME.m_IsStateLoading) {
-        return;
-    }
-
-    if (!InGame()) {
-        if (TryContinue()) {
-            console.log("continued!");
-            watchdogLastGameChange = Date.now();
+        if(failCount > MAX_FAIL_COUNT) {
+            ReloadPage();
         }
-        return;
-    }
-    failCount = 0;
+
+        if(GAME.m_IsStateLoading) {
+            return;
+        }
+
+        if (!InGame()) {
+            if (TryContinue()) {
+                console.log("continued!");
+                watchdogLastGameChange = Date.now();
+            }
+            return;
+        }
+        failCount = 0;
 
 
-    let state = EnemyManager();
+        let state = EnemyManager();
 
-    let enemies = state.m_rgEnemies;
+        let enemies = state.m_mapEnemies;
 
-    for (let attack of attacks)
-        if (attack.shouldAttack(delta, enemies))
-            attack.process(enemies);
+        for (let attack of attacks)
+            if (attack.shouldAttack(delta, enemies))
+                attack.process(enemies);
 
-}
+        }
 
 
-APP.ticker.add(context.BOT_FUNCTION);
+        APP.ticker.add(context.BOT_FUNCTION);
 
-})(window);
+    })(window);
