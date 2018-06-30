@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      26
+// @version      27
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -206,11 +206,11 @@ const CanAttack = function CanAttack(attackname) {
 const GetBossZone = function GetBossZone() {
     for (let idx = 0; idx < GAME.m_State.m_Grid.m_Tiles.length; idx++) {
         let zone = GAME.m_State.m_Grid.m_Tiles[idx].Info;
-        if (!zone.captured && zone.boss) {
+        if (!zone.captured && (zone.boss || zone.boss_active)) {
+            console.log(`zone ${idx} (${idx % k_NumMapTilesW}, ${(idx / k_NumMapTilesW) | 0}) with boss`);
             return idx;
         }
     }
-
     return -1;
 };
 const GetBestZone = function GetBestZone() {
@@ -223,10 +223,6 @@ const GetBestZone = function GetBestZone() {
     for (let idx = 0; idx < GAME.m_State.m_Grid.m_Tiles.length; idx++) {
         let zone = GAME.m_State.m_Grid.m_Tiles[idx].Info;
         if (!zone.captured && zone.clans.length > 0) {
-            if (zone.boss) {
-                console.log(`zone ${idx} (${bestZoneIdx % k_NumMapTilesW}, ${(bestZoneIdx / k_NumMapTilesW) | 0}) with boss`);
-                return idx;
-            }
 
             if(isLevelling) {
                 if(zone.difficulty > highestDifficulty) {
