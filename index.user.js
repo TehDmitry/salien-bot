@@ -327,8 +327,19 @@ const GetOutdatedPlanet = function GetOutdatedPlanet() {
     }
 
     if(mostOutdatedPlanet) {
-        console.log(`selecting Outdated planet ${mostOutdatedPlanet.state.name} with progress: ${mostOutdatedPlanet.state.capture_progress}`);
-        return mostOutdatedPlanet.id;
+        let planetCheckTimeout = 60;
+        let lastPlanetCheck = sessionStorage.getItem('lastPlanetCheck_' + mostOutdatedPlanet.id);
+
+        let secondsSinceCheck = (lastPlanetCheck == null)?planetCheckTimeout + 1:Math.round((Date.now() - lastPlanetCheck)/1000);
+
+        if(secondsSinceCheck > planetCheckTimeout) {
+            console.log(`selecting Outdated planet ${mostOutdatedPlanet.state.name} with progress: ${mostOutdatedPlanet.state.capture_progress}`);
+            return mostOutdatedPlanet.id;
+        }
+        else {
+            console.log(`Outdated planet «${mostOutdatedPlanet.state.name}» will be recheck in ${planetCheckTimeout - secondsSinceCheck}`);
+        }
+
     }
 }
 
