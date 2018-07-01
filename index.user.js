@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      32
+// @version      33
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -757,12 +757,11 @@ context.BOT_FUNCTION = function ticker(delta) {
     let buttonsOnErrorMessage = document.getElementsByClassName("btn_grey_white_innerfade btn_medium");
     if(buttonsOnErrorMessage[0] != null) {
         console.log("found error button");
-        reloadingPage = true;
         if (!reloadingPage) {
             setTimeout(() => GameLoadError(), 1000);
             setTimeout(() => reloadingPage = false, 2000);
         }
-
+        reloadingPage = true;
         return;
     }
 
