@@ -138,12 +138,12 @@ const TryContinue = function TryContinue() {
         GAME.m_State.m_LevelUpScreen.children.forEach(function(child) {
             if (child.visible && child.x == 155 && child.y == 300) {// TODO: not this
                 continued = true;
-                SetJoining(true);
+                //SetJoining(true);
                 setTimeout(() => {
                     child.pointertap();
                 }, 1000);
 
-                CleanJoiningAfter(2000);            
+                //CleanJoiningAfter(2000);            
             }
         })
     }
