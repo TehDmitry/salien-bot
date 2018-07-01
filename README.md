@@ -1,6 +1,9 @@
 ### differences from original salien-bot (for now)
 
-* more AFK support: watchdog timer + reload page if failure count is too much
+* More AFK support: watchdog timer + reload page if failure count is too much
+* Boss support
+* Planet Autocheck for Boss
+* Altruistic Checking for Boss (clean several zones between checks)
 
 ### salien-bot
 
