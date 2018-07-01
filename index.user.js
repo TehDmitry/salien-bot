@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      31
+// @version      32
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -389,7 +389,7 @@ const GetBestPlanet = function GetBestPlanet() {
 // Let's challenge ourselves to be human here!
 const CLICKS_PER_SECOND = 15;
 const STATE_TIMEOUT_MINUTES = 5;
-const BOSS_TIMEOUT_MINUTES = 25;
+const BOSS_TIMEOUT_MINUTES = 60;
 const MAX_FAIL_COUNT = 50;
 
 const InGame = function InGame() {
