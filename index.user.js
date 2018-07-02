@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      34
+// @version      35
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -505,7 +505,7 @@ class ClickAttack extends Attack {
         return this.nextAttackDelta <= 0;;
     }
     score(enemy) {
-        if (enemy.m_bDead)
+        if (enemy.m_bDead || enemy instanceof CBoss)
             return WORST_SCORE;
         let score = 1 - EnemyDistance(enemy);
         
@@ -565,7 +565,7 @@ class ProjectileAttack extends Attack {
         return CanAttack(this.getAttackName());
     }
     score(enemy) {
-        if (enemy.m_bDead)
+        if (enemy.m_bDead || enemy instanceof CBoss)
             return WORST_SCORE;
         let score =  AllEnemiesHPNearPoint(enemy.m_Sprite.x, enemy.m_Sprite.y, this.getProjectileSplashRadius());
         
@@ -627,6 +627,9 @@ class SpecialAttack extends ProjectileAttack {
         return 147/2;
     }
     idle() {
+        if(gGame.m_State instanceof CBossState) {
+            return;
+        }
         let y = WeakRandomInt( gApp.screen.height - k_SpawnHeightLimit, gApp.screen.height - 50);
         let x = gApp.screen.width - 60;
         this.attack(x, y);
@@ -635,7 +638,7 @@ class SpecialAttack extends ProjectileAttack {
 
 class BombAttack extends ProjectileAttack {
     score(enemy) {
-        if (enemy.m_bDead || EnemyWillAffectedByBoulder(enemy) || BlackholeOfEnemy(enemy) != null)
+        if (enemy.m_bDead || EnemyWillAffectedByBoulder(enemy) || BlackholeOfEnemy(enemy) != null || enemy instanceof CBoss)
             return WORST_SCORE;
 
         let score =  AllEnemiesHPNearPoint(enemy.m_Sprite.x, enemy.m_Sprite.y, this.getProjectileSplashRadius());
