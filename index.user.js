@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      33
+// @version      34
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -162,7 +162,7 @@ const TryContinue = function TryContinue() {
         SetJoining(true);
         let bestPlanetId;
         if(FORCE_FIND_THE_BOSS) {
-            bestPlanetId = GetOutdatedPlanet();
+            bestPlanetId = GetBossPlanet() > 0 ? GetBossPlanet() : GetOutdatedPlanet();
             if(bestPlanetId == 0) {
                 sessionStorage.setItem('lastPlanetFullCheck', Date.now());
                 console.log('planets checked');
@@ -312,6 +312,17 @@ const GetBestZone = function GetBestZone() {
 
     return bestZoneIdx;
 }
+const GetBossPlanet = function GetBossPlanet() {
+    for (let planetKV of GAME.m_State.m_mapPlanets) {
+        let planet = planetKV[1];
+        if(planet.state.active && !planet.state.captured && planet.state.boss_zone_position !== undefined) {
+            console.log('found planet with boss!');
+            return planet.id;
+        }
+    }
+
+    return 0;
+};
 const GetOutdatedPlanet = function GetOutdatedPlanet() {
     let mostOutdatedPlanet;
     let mostOutdatedDate = 0;
