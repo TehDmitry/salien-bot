@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      35
+// @version      35.1
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -76,20 +76,25 @@ const ReloadPage = function ReloadPage() {
     console.log("try to reload page");
 }
 const ShowStats = function ShowStats() {
-    let scoreDiff = 0;
-    context.gPlayerInfo.score
-    if(prevScore > 0) {
-        scoreDiff = context.gPlayerInfo.score - prevScore;
+    if(typeof context == undefined || typeof context.gPlayerInfo == undefined || context.gPlayerInfo == null || typeof context.gPlayerInfo.score == undefined) {
+        return;
     }
 
-    console.log(`level ${context.gPlayerInfo.level} score ${context.gPlayerInfo.score} / ${context.gPlayerInfo.next_level_score} diff:${scoreDiff} xp`);
-
-    prevScore = context.gPlayerInfo.score;
+    let prevScore = sessionStorage.getItem('prevScore');
+    if(prevScore != context.gPlayerInfo.score) {
+        sessionStorage.setItem('prevScore', context.gPlayerInfo.score);
+        let scoreDiff = 0;
+        if(prevScore > 0) {
+            scoreDiff = context.gPlayerInfo.score - prevScore;
+            console.log(`Score increased: +${scoreDiff} level ${context.gPlayerInfo.level} score ${context.gPlayerInfo.score} / ${context.gPlayerInfo.next_level_score}`);
+        }
+    }
 };
+
 let isJoining = false;
 let isJoiningCleared = true;
 let failCount = 0;
-let prevScore = 0;
+
 let lastPlanetChange = 0;
 
 const SetJoining = function SetJoining(joining) {
@@ -216,7 +221,6 @@ const TryContinue = function TryContinue() {
             if(bestZoneIdx > -1) {
                 console.log(GAME.m_State.m_SalienInfoBox.m_LevelText.text, GAME.m_State.m_SalienInfoBox.m_XPValueText.text);
                 console.log(`join to zone ${bestZoneIdx}  ${failCount++}/${MAX_FAIL_COUNT}`);
-                ShowStats();
                 setTimeout(() => {
                     GAME.m_State.m_Grid.click(bestZoneIdx % k_NumMapTilesW, (bestZoneIdx / k_NumMapTilesW) | 0);
                 }, 2000);
@@ -791,6 +795,7 @@ context.BOT_FUNCTION = function ticker(delta) {
         if (TryContinue()) {
             console.log("continued!");
             watchdogLastGameChange = Date.now();
+            ShowStats();
         }
         return;
     }
