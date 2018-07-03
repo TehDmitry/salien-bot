@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Saliens bot
 // @namespace    http://tampermonkey.net/
-// @version      35.1
+// @version      35.2
 // @description  Beat all the saliens levels
 // @author       https://github.com/meepen/salien-bot
 // @match        https://steamcommunity.com/saliengame
@@ -134,7 +134,12 @@ const TryContinue = function TryContinue() {
                     child.pointertap();
                 }, 1000);
 
-                CleanJoiningAfter(1000);
+                if (GAME.m_State instanceof CBossState) {
+                    CleanJoiningAfter(10000);
+                }
+                else {
+                    CleanJoiningAfter(1000);
+                }
             }
         })
     }
